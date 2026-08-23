@@ -1,4 +1,5 @@
 from database.db import db
+from datetime import datetime, timezone
 
 
 class Asset(db.Model):
@@ -31,4 +32,22 @@ class Asset(db.Model):
 
     owner = db.Column(
         db.String(100)
+    )
+
+    cost = db.Column(
+        db.Float,
+        default=0.0
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
     )

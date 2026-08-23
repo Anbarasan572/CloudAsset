@@ -23,7 +23,10 @@ def get_assets():
             "service": asset.service,
             "region": asset.region,
             "status": asset.status,
-            "owner": asset.owner
+            "owner": asset.owner,
+            "cost": asset.cost,
+            "created_at": asset.created_at.isoformat() if asset.created_at else None,
+            "updated_at": asset.updated_at.isoformat() if asset.updated_at else None
         })
 
     return jsonify(result)
@@ -47,7 +50,10 @@ def get_asset(asset_id):
         "service": asset.service,
         "region": asset.region,
         "status": asset.status,
-        "owner": asset.owner
+        "owner": asset.owner,
+        "cost": asset.cost,
+        "created_at": asset.created_at.isoformat() if asset.created_at else None,
+        "updated_at": asset.updated_at.isoformat() if asset.updated_at else None
     })
 
 
@@ -83,6 +89,19 @@ def add_asset():
                     "error": f"{field} cannot be empty string"
                 }), 400
 
+    # Validate cost if provided
+    if "cost" in data and data["cost"] is not None:
+        try:
+            cost_value = float(data["cost"])
+            if cost_value < 0:
+                return jsonify({
+                    "error": "cost cannot be negative"
+                }), 400
+        except (ValueError, TypeError):
+            return jsonify({
+                "error": "cost must be a valid number"
+            }), 400
+
     try:
         new_asset = Asset(
             asset_name=data["asset_name"].strip(),
@@ -90,7 +109,8 @@ def add_asset():
             service=data.get("service", "").strip() if data.get("service") else None,
             region=data.get("region", "").strip() if data.get("region") else None,
             status=data.get("status", "").strip() if data.get("status") else None,
-            owner=data.get("owner", "").strip() if data.get("owner") else None
+            owner=data.get("owner", "").strip() if data.get("owner") else None,
+            cost=float(data.get("cost", 0.0)) if data.get("cost") else 0.0
         )
 
         db.session.add(new_asset)
@@ -129,19 +149,32 @@ def update_asset(asset_id):
     data = request.json
 
     # Validate at least one field is provided
-    valid_fields = ["asset_name", "provider", "service", "region", "status", "owner"]
+    valid_fields = ["asset_name", "provider", "service", "region", "status", "owner", "cost"]
     if not any(field in data for field in valid_fields):
         return jsonify({
             "error": "At least one field must be provided to update"
         }), 400
 
     # Validate fields are not empty strings if provided
-    for field in valid_fields:
+    for field in ["asset_name", "provider", "service", "region", "status", "owner"]:
         if field in data:
             if data[field] is not None and not str(data[field]).strip():
                 return jsonify({
                     "error": f"{field} cannot be empty string"
                 }), 400
+
+    # Validate cost if provided
+    if "cost" in data and data["cost"] is not None:
+        try:
+            cost_value = float(data["cost"])
+            if cost_value < 0:
+                return jsonify({
+                    "error": "cost cannot be negative"
+                }), 400
+        except (ValueError, TypeError):
+            return jsonify({
+                "error": "cost must be a valid number"
+            }), 400
 
     try:
         # Update only provided fields
@@ -157,6 +190,8 @@ def update_asset(asset_id):
             asset.status = data["status"].strip() if data["status"] else None
         if "owner" in data:
             asset.owner = data["owner"].strip() if data["owner"] else None
+        if "cost" in data:
+            asset.cost = float(data["cost"]) if data["cost"] is not None else 0.0
 
         db.session.commit()
 

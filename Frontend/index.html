@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudAsset - Cloud Asset Management</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>CloudAsset</h1>
+            <p>Cloud Asset Management System</p>
+        </header>
+
+        <!-- Add Asset Form -->
+        <section class="add-asset-section">
+            <h2>Add New Asset</h2>
+            <form id="addAssetForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="assetName">Asset Name *</label>
+                        <input type="text" id="assetName" name="assetName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="provider">Provider</label>
+                        <select id="provider" name="provider">
+                            <option value="AWS">AWS (Amazon Web Services)</option>
+                            <option value="Azure">Azure (Microsoft)</option>
+                            <option value="GCP">GCP (Google Cloud Platform)</option>
+                            <option value="Oracle Cloud">Oracle Cloud</option>
+                            <option value="IBM Cloud">IBM Cloud</option>
+                            <option value="Alibaba Cloud">Alibaba Cloud</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="service">Service</label>
+                        <select id="service" name="service">
+                            <option value="EC2">EC2 (Virtual Machine)</option>
+                            <option value="S3">S3 (Storage)</option>
+                            <option value="RDS">RDS (Database)</option>
+                            <option value="Lambda">Lambda (Serverless)</option>
+                            <option value="ECS">ECS (Container Service)</option>
+                            <option value="EKS">EKS (Kubernetes)</option>
+                            <option value="CloudFront">CloudFront (CDN)</option>
+                            <option value="Route53">Route53 (DNS)</option>
+                            <option value="VPC">VPC (Network)</option>
+                            <option value="Load Balancer">Load Balancer</option>
+                            <option value="CloudWatch">CloudWatch (Monitoring)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="region">Region</label>
+                        <select id="region" name="region">
+                            <option value="us-east-1">US East (N. Virginia)</option>
+                            <option value="us-east-2">US East (Ohio)</option>
+                            <option value="us-west-1">US West (N. California)</option>
+                            <option value="us-west-2">US West (Oregon)</option>
+                            <option value="ap-south-1">Asia Pacific (Mumbai)</option>
+                            <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                            <option value="ap-southeast-2">Asia Pacific (Sydney)</option>
+                            <option value="eu-central-1">Europe (Frankfurt)</option>
+                            <option value="eu-west-1">Europe (Ireland)</option>
+                            <option value="eu-west-2">Europe (London)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="Running">Running</option>
+                            <option value="Stopped">Stopped</option>
+                            <option value="Terminated">Terminated</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="owner">Owner</label>
+                        <select id="owner" name="owner">
+                            <option value="Anbarasan">Anbarasan</option>
+                            <option value="DevOps Team">DevOps Team</option>
+                            <option value="Infrastructure Team">Infrastructure Team</option>
+                            <option value="Development Team">Development Team</option>
+                            <option value="QA Team">QA Team</option>
+                            <option value="Production Team">Production Team</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cost">Monthly Cost (USD)</label>
+                        <div class="cost-input-group">
+                            <input type="number" id="cost" name="cost" min="0" step="0.01" placeholder="e.g., 150.00">
+                            <button type="button" class="btn btn-estimate" onclick="estimateCost()">Auto-Estimate</button>
+                        </div>
+                        <small class="form-hint">💡 Estimated cost based on typical pricing. Production systems use AWS Cost Explorer API for actual billing data.</small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Asset</button>
+            </form>
+        </section>
+
+        <!-- Assets List -->
+        <section class="assets-section">
+            <div class="section-header">
+                <h2>All Assets</h2>
+                <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+            </div>
+
+            <!-- Dashboard Statistics -->
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Assets</div>
+                    <div class="stat-value" id="totalAssets">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Monthly Cost</div>
+                    <div class="stat-value" id="totalCost">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Assets</div>
+                    <div class="stat-value" id="activeAssets">0</div>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="search-filter-container">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Search by asset name..." onkeyup="filterAssets()">
+                </div>
+                <div class="filter-controls">
+                    <select id="filterProvider" onchange="filterAssets()">
+                        <option value="">All Providers</option>
+                        <option value="AWS">AWS</option>
+                        <option value="Azure">Azure</option>
+                        <option value="GCP">GCP</option>
+                        <option value="Oracle Cloud">Oracle Cloud</option>
+                        <option value="IBM Cloud">IBM Cloud</option>
+                        <option value="Alibaba Cloud">Alibaba Cloud</option>
+                    </select>
+                    <select id="filterStatus" onchange="filterAssets()">
+                        <option value="">All Status</option>
+                        <option value="Running">Running</option>
+                        <option value="Stopped">Stopped</option>
+                        <option value="Terminated">Terminated</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                    <select id="filterOwner" onchange="filterAssets()">
+                        <option value="">All Owners</option>
+                        <option value="Anbarasan">Anbarasan</option>
+                        <option value="DevOps Team">DevOps Team</option>
+                        <option value="Infrastructure Team">Infrastructure Team</option>
+                        <option value="Development Team">Development Team</option>
+                        <option value="QA Team">QA Team</option>
+                        <option value="Production Team">Production Team</option>
+                    </select>
+                    <button class="btn btn-secondary btn-clear" onclick="clearFilters()">Clear Filters</button>
+                </div>
+            </div>
+            
+            <div id="loadingMessage" class="loading">Loading assets...</div>
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            <div id="successMessage" class="success" style="display: none;"></div>
+            
+            <div id="assetsContainer">
+                <!-- Assets will be loaded here dynamically -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Asset</h2>
+            <form id="editAssetForm">
+                <input type="hidden" id="editAssetId">
+                <div class="form-group">
+                    <label for="editAssetName">Asset Name *</label>
+                    <input type="text" id="editAssetName" name="assetName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editProvider">Provider</label>
+                    <select id="editProvider" name="provider">
+                        <option value="AWS">AWS (Amazon Web Services)</option>
+                        <option value="Azure">Azure (Microsoft)</option>
+                        <option value="GCP">GCP (Google Cloud Platform)</option>
+                        <option value="Oracle Cloud">Oracle Cloud</option>
+                        <option value="IBM Cloud">IBM Cloud</option>
+                        <option value="Alibaba Cloud">Alibaba Cloud</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editService">Service</label>
+                    <select id="editService" name="service">
+                        <option value="EC2">EC2 (Virtual Machine)</option>
+                        <option value="S3">S3 (Storage)</option>
+                        <option value="RDS">RDS (Database)</option>
+                        <option value="Lambda">Lambda (Serverless)</option>
+                        <option value="ECS">ECS (Container Service)</option>
+                        <option value="EKS">EKS (Kubernetes)</option>
+                        <option value="CloudFront">CloudFront (CDN)</option>
+                        <option value="Route53">Route53 (DNS)</option>
+                        <option value="VPC">VPC (Network)</option>
+                        <option value="Load Balancer">Load Balancer</option>
+                        <option value="CloudWatch">CloudWatch (Monitoring)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editRegion">Region</label>
+                    <select id="editRegion" name="region">
+                        <option value="us-east-1">US East (N. Virginia)</option>
+                        <option value="us-east-2">US East (Ohio)</option>
+                        <option value="us-west-1">US West (N. California)</option>
+                        <option value="us-west-2">US West (Oregon)</option>
+                        <option value="ap-south-1">Asia Pacific (Mumbai)</option>
+                        <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+                        <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                        <option value="ap-southeast-2">Asia Pacific (Sydney)</option>
+                        <option value="eu-central-1">Europe (Frankfurt)</option>
+                        <option value="eu-west-1">Europe (Ireland)</option>
+                        <option value="eu-west-2">Europe (London)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editStatus">Status</label>
+                    <select id="editStatus" name="status">
+                        <option value="Running">Running</option>
+                        <option value="Stopped">Stopped</option>
+                        <option value="Terminated">Terminated</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editOwner">Owner</label>
+                    <select id="editOwner" name="owner">
+                        <option value="Anbarasan">Anbarasan</option>
+                        <option value="DevOps Team">DevOps Team</option>
+                        <option value="Infrastructure Team">Infrastructure Team</option>
+                        <option value="Development Team">Development Team</option>
+                        <option value="QA Team">QA Team</option>
+                        <option value="Production Team">Production Team</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editCost">Monthly Cost (USD)</label>
+                    <div class="cost-input-group">
+                        <input type="number" id="editCost" name="cost" min="0" step="0.01" placeholder="e.g., 150.00">
+                        <button type="button" class="btn btn-estimate" onclick="estimateEditCost()">Auto-Estimate</button>
+                    </div>
+                    <small class="form-hint">💡 Estimated cost based on typical pricing. Production systems use AWS Cost Explorer API for actual billing data.</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Update Asset</button>
+                    <button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
