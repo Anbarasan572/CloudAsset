@@ -2,7 +2,7 @@ name: CloudAsset CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [backend]
   workflow_dispatch:
 
 permissions:
