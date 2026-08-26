@@ -1,65 +1,57 @@
-name: CloudAsset CI/CD Pipeline
+name: CloudAsset SSH CI/CD Pipeline
 
 on:
   push:
     branches: [backend]
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-
-env:
-  ECR_REPOSITORY: cloudasset
-  IMAGE_TAG: latest
-
 jobs:
-  build-and-deploy:
+  deploy:
+    name: Deploy CloudAsset to Ubuntu EC2
     runs-on: ubuntu-latest
 
     steps:
-      - name: Step 1 - Checkout Code
-        uses: actions/checkout@v4
 
-      - name: Step 2 - Configure AWS Credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::183631319668:role/GitHubActions-CloudAsset
-          aws-region: us-east-1
-
-      - name: Step 3 - Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Step 4 - Build and Push Docker Image
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          docker build -t $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./Backend
-          docker push $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: Step 5 - Deploy to EC2 via SSH
+      - name: Step 1 - Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            ACCOUNT_ID=183631319668
-            ECR_REPO=$ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/cloudasset
+            set -e
 
-            aws ecr get-login-password --region us-east-1 | \
-              docker login --username AWS \
-              --password-stdin $ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+            echo "========================================="
+            echo "Starting CloudAsset deployment"
+            echo "========================================="
 
-            docker pull $ECR_REPO:latest
+            cd ~/CloudAsset
 
-            docker stop cloudasset-app || true
-            docker rm cloudasset-app || true
+            echo "Current directory:"
+            pwd
 
-            docker run -d \
-              --name cloudasset-app \
-              -p 5000:5000 \
-              $ECR_REPO:latest
+            echo "Fetching latest backend code..."
 
-            docker image prune -f
+            git fetch origin backend
+            git reset --hard origin/backend
+
+            echo "Latest commit:"
+            git log -1 --oneline
+
+            echo "Updating Python dependencies..."
+
+            if [ -f requirements.txt ]; then
+              pip3 install -r requirements.txt
+            fi
+
+            echo "Restarting CloudAsset service..."
+
+            sudo systemctl restart cloudasset
+
+            echo "Checking CloudAsset service..."
+
+            sudo systemctl status cloudasset --no-pager
+
+            echo "========================================="
+            echo "CloudAsset deployment completed"
+            echo "========================================="
