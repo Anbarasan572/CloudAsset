@@ -47,9 +47,19 @@ jobs:
           script: |
             ACCOUNT_ID=183631319668
             ECR_REPO=$ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/cloudasset
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+
+            aws ecr get-login-password --region us-east-1 | \
+              docker login --username AWS \
+              --password-stdin $ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+
             docker pull $ECR_REPO:latest
+
             docker stop cloudasset-app || true
             docker rm cloudasset-app || true
-            docker run -d --name cloudasset-app -p 5000:5000 $ECR_REPO:latest
+
+            docker run -d \
+              --name cloudasset-app \
+              -p 5000:5000 \
+              $ECR_REPO:latest
+
             docker image prune -f
